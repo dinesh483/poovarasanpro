@@ -17,10 +17,10 @@ let appState = {
 const BANNER_SPECS = {
   width: 576,
   height: 1024,
-  circleCenterX: 288,
-  circleCenterY: 667,
-  circleRadius: 115,
-  nameBadgeY: 792
+  circleCenterX: 284,
+  circleCenterY: 744,
+  circleRadius: 114,
+  nameBadgeY: 886
 };
 
 /* ==========================================================================
@@ -268,6 +268,10 @@ function initGreetingPage() {
     bannerName.innerHTML = `<span class="gold-dot">★</span> ${escapeHtml(data.userName)} <span class="gold-dot">★</span>`;
   }
 
+  if (bannerName) {
+    requestAnimationFrame(() => fitBannerName(bannerName));
+  }
+
   // Trigger celebration confetti
   startConfettiCelebration();
 }
@@ -277,6 +281,19 @@ function handleCreateAnother() {
     sessionStorage.removeItem(STORAGE_KEY);
   } catch (e) {}
   window.location.href = 'index.html';
+}
+
+function fitBannerName(nameEl) {
+  if (!nameEl) return;
+
+  nameEl.style.fontSize = '';
+  const minSize = 9;
+  let fontSize = parseFloat(window.getComputedStyle(nameEl).fontSize);
+
+  while (fontSize > minSize && nameEl.scrollWidth > nameEl.clientWidth) {
+    fontSize -= 0.5;
+    nameEl.style.fontSize = `${fontSize}px`;
+  }
 }
 
 /* ==========================================================================
@@ -350,14 +367,24 @@ async function generateCompositeCanvas(scale = 2) {
   const nameY = BANNER_SPECS.nameBadgeY * scale;
 
   ctx.save();
-  const fontSize = Math.round(15 * scale);
-  ctx.font = `800 ${fontSize}px "Montserrat", "Outfit", sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
+  const maxTextWidth = targetWidth * 0.74;
+  let fontSize = Math.round(17 * scale);
+  const minFontSize = Math.round(10 * scale);
+
+  do {
+    ctx.font = `800 ${fontSize}px "Montserrat", "Outfit", sans-serif`;
+    if (ctx.measureText(nameText).width <= maxTextWidth || fontSize <= minFontSize) {
+      break;
+    }
+    fontSize -= 1;
+  } while (fontSize > minFontSize);
+
   // Measure text width for badge background
   const textMetrics = ctx.measureText(nameText);
-  const badgeWidth = Math.min(textMetrics.width + (32 * scale), targetWidth * 0.85);
+  const badgeWidth = Math.min(textMetrics.width + (34 * scale), targetWidth * 0.82);
   const badgeHeight = 30 * scale;
   const badgeX = cx - badgeWidth / 2;
   const badgeTopY = nameY - badgeHeight / 2;
